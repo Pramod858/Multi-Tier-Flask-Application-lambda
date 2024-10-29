@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Resize Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; text-align: center; padding: 50px; color: #333; }
+        h1 { font-size: 2em; color: #4CAF50; }
+        #uploadSection { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); padding: 20px; max-width: 600px; margin: 0 auto; }
+        .input-group { display: flex; gap: 10px; margin-top: 10px; }
+        input[type="file"], input[type="number"], button { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #status { margin-top: 20px; font-weight: bold; }
+        #images { display: flex; justify-content: center; margin-top: 20px; gap: 30px; }
+        .image-container { background-color: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); max-width: 300px; }
+        .image-container img { max-width: 100%; border-radius: 8px; }
+        .image-info { margin-top: 10px; font-size: 0.9em; color: #555; }
+        #downloadLink { display: block; margin-top: 10px; padding: 10px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
+        .logout-button { background-color: #f44336; margin-top: 20px; }
+        .logout-button:hover { background-color: #e53935; }
+    </style>
+</head>
+<body>
+    <h1>Image Upload and Resize Tool</h1>
+    <div id="uploadSection">
+        <h2>Upload Your Image</h2>
+        <form id="uploadForm">
+            <input type="file" id="fileInput" name="file" accept="image/*" required>
+            <div class="input-group">
+                <input type="number" id="widthInput" name="width" placeholder="Width (px)" required>
+                <input type="number" id="heightInput" name="height" placeholder="Height (px)" required>
+            </div>
+            <button type="submit">Upload and Resize</button>
+        </form>
+        <div id="status">Awaiting image upload...</div>
+    </div>
+
+    <div id="images" style="display: none;">
+        <div class="image-container">
+            <h3>Original Image</h3>
+            <img id="originalImage" src="" alt="Original Image">
+            <p id="originalSize" class="image-info"></p>
+        </div>
+        <div class="image-container">
+            <h3>Resized Image</h3>
+            <img id="resizedImage" src="" alt="Resized Image">
+            <p id="resizedSize" class="image-info"></p>
+            <a id="downloadLink" href="" download>Download Resized Image</a>
+        </div>
+    </div>
+
+    <button class="logout-button" onclick="logout()">Logout</button>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('fileInput');
+            const widthInput = document.getElementById('widthInput').value;
+            const heightInput = document.getElementById('heightInput').value;
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('width', widthInput);
+            formData.append('height', heightInput);
+
+            document.getElementById('status').innerText = 'Uploading image...';
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            const { original_url, resized_url, resized_key } = data;
+
+            document.getElementById('originalImage').src = original_url;
+            document.getElementById('images').style.display = 'flex';
+            document.getElementById('status').innerText = 'Processing image, please wait...';
+
+            const checkInterval = setInterval(async () => {
+                const checkResponse = await fetch('/check-resized', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ resized_key })  // Make sure resized_key is defined here
+                });
+                const checkData = await checkResponse.json();
+
+                if (checkData.exists) {
+                    clearInterval(checkInterval);
+                    document.getElementById('status').innerText = 'Image resized successfully!';
+                    document.getElementById('resizedImage').src = resized_url;
+                    document.getElementById('downloadLink').href = resized_url;
+                    document.getElementById('originalSize').innerText = `Original Size: ${(checkData.original_size / 1024).toFixed(2)} KB`;
+                    document.getElementById('resizedSize').innerText = `Resized Size: ${(checkData.resized_size / 1024).toFixed(2)} KB`;
+                }
+            }, 3000);
+        });
+
+        async function logout() {
+            const response = await fetch('/logout');
+            if (response.ok) {
+                window.location.href = '/'; // Redirect to the home page after logout
+            }
+        }
+    </script>
+</body>
+</html>
