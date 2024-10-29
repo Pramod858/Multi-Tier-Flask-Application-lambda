@@ -1,0 +1,219 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Page</title>
+    <style>
+        .container {
+            padding: 16px;
+            max-width: 400px;
+            margin: auto;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button, input[type="text"], input[type="password"], input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        .container .psw {
+            float: right;
+            padding-top: 16px;
+        }
+        .status-message {
+            font-size: 0.9em;
+            color: red;
+            margin-top: 4px;
+        }
+        .status-available {
+            color: green;
+        }
+        .password-status, .confirm-password-status {
+            color: red;
+            margin-top: 4px;
+        }
+        .match {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <form id="registrationForm" method="POST">
+        <div class="container">
+            <h2>Register</h2>
+
+            <label for="uname"><b>Username</b></label>
+            <input type="text" placeholder="Enter Username" name="uname" id="uname" required>
+            <div id="username-status" class="status-message"></div>
+
+            <label for="email"><b>Email</b></label>
+            <input type="email" placeholder="Enter Email" name="email" id="email" required>
+            <div id="email-status" class="status-message"></div>
+
+            <label for="psw"><b>Password</b></label>
+            <input type="password" placeholder="Enter Password" name="psw" id="psw" required>
+            <div id="password-status" class="password-status"></div>
+
+            <label for="psw-repeat"><b>Confirm Password</b></label>
+            <input type="password" placeholder="Confirm Password" name="psw-repeat" id="psw-repeat" required>
+            <div id="confirm-password-status" class="confirm-password-status"></div>
+
+            <button type="submit">Register</button>
+            <label>
+                <input type="checkbox" checked="checked" name="remember"> Remember me
+            </label>
+            <span class="psw">Already have an account? <a href="/login">Login</a></span>
+        </div>
+    </form>
+
+    <script>
+        let isUsernameAvailable = false;
+        let isEmailAvailable = false;
+
+        // Check username availability
+        document.getElementById('uname').addEventListener('input', function () {
+            const username = this.value;
+            const usernameStatus = document.getElementById('username-status');
+
+            if (username.length > 0) {
+                fetch('/check-availability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uname: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.usernameExists) {
+                        usernameStatus.textContent = 'Username already exists';
+                        usernameStatus.classList.remove('status-available');
+                        isUsernameAvailable = false;
+                    } else {
+                        usernameStatus.textContent = 'Username available';
+                        usernameStatus.classList.add('status-available');
+                        isUsernameAvailable = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    usernameStatus.textContent = 'Error checking username';
+                });
+            } else {
+                usernameStatus.textContent = '';
+                isUsernameAvailable = false;
+            }
+        });
+
+        // Check email availability
+        document.getElementById('email').addEventListener('input', function () {
+            const email = this.value;
+            const emailStatus = document.getElementById('email-status');
+
+            if (email.length > 0) {
+                fetch('/check-availability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.emailExists) {
+                        emailStatus.textContent = 'Email already exists';
+                        emailStatus.classList.remove('status-available');
+                        isEmailAvailable = false;
+                    } else {
+                        emailStatus.textContent = 'Email available';
+                        emailStatus.classList.add('status-available');
+                        isEmailAvailable = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    emailStatus.textContent = 'Error checking email';
+                });
+            } else {
+                emailStatus.textContent = '';
+                isEmailAvailable = false;
+            }
+        });
+
+        // Validate password strength
+        document.getElementById('psw').addEventListener('input', function () {
+            const password = this.value;
+            const passwordStatus = document.getElementById('password-status');
+
+            const isValidPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*()]).{8,}$/;
+
+            if (!isValidPassword.test(password)) {
+                passwordStatus.textContent = 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
+            } else {
+                passwordStatus.textContent = '';
+            }
+        });
+
+        // Validate confirm password match
+        document.getElementById('psw-repeat').addEventListener('input', function () {
+            const password = document.getElementById('psw').value;
+            const confirmPassword = this.value;
+            const confirmPasswordStatus = document.getElementById('confirm-password-status');
+
+            if (password === confirmPassword) {
+                confirmPasswordStatus.textContent = 'Passwords match';
+                confirmPasswordStatus.classList.add('match');
+            } else {
+                confirmPasswordStatus.textContent = 'Passwords do not match';
+                confirmPasswordStatus.classList.remove('match');
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('registrationForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            if (!isUsernameAvailable) {
+                alert('Please choose a different username.');
+                return;
+            }
+            if (!isEmailAvailable) {
+                alert('Please use a different email address.');
+                return;
+            }
+
+            const password = document.getElementById('psw').value;
+            const confirmPassword = document.getElementById('psw-repeat').value;
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match.');
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            fetch('/register', {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.message.includes('registered')) {
+                    window.location.href = '/login';  // Redirect to login page after registration
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+
+</body>
+</html>
