@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
+
+  flask_app:
+    image: pramod858/lambda-flask-app:latest
+    container_name: flask_app
+    environment:
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_HOST: db
+      API_GATEWAY_URL: ${API_GATEWAY_URL}
+      SOURCE_BUCKET: ${SOURCE_BUCKET}
+      TARGET_BUCKET: ${TARGET_BUCKET}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+    restart: on-failure  # This will restart the container if it fails initially
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
