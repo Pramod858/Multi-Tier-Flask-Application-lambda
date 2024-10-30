@@ -158,6 +158,7 @@ def upload_image():
 @app.route('/check-resized', methods=['POST'])
 @login_required
 def check_resized_image():
+    print(request.json)
     resized_key = request.json.get('resized_key')
 
     if resized_key is None:
