@@ -14,16 +14,20 @@ app = Flask(__name__)
 
 s3 = boto3.client('s3')
 
-# Configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv('DATABASE_URI')  # Your MySQL database URI
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = 'your_secret_key'  # Change this to a random secret key
-db = SQLAlchemy(app)
-
 # Retrieve environment variables
 SOURCE_BUCKET = os.getenv('SOURCE_BUCKET')
 TARGET_BUCKET = os.getenv('TARGET_BUCKET')
 API_GATEWAY_URL = os.getenv('API_GATEWAY_URL')
+MYSQL_USERNAME = os.getenv('MYSQL_USERNAME')
+MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD')
+MYSQL_HOST = os.getenv('MYSQL_HOST')
+MYSQL_DATABASE = os.getenv('MYSQL_DATABASE')
+
+# Configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql://{MYSQL_USERNAME}:{MYSQL_PASSWORD}@{MYSQL_HOST}/{MYSQL_DATABASE}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.secret_key = 'your_secret_key'  # Change this to a random secret key
+db = SQLAlchemy(app)
 
 # User Model
 class User(db.Model):
