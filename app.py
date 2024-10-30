@@ -128,6 +128,7 @@ def upload_image():
     # Upload file to S3
     try:
         s3.upload_fileobj(file, SOURCE_BUCKET, source_key)
+        print("Image uploaded successfully.")
         time.sleep(5) # The time where lambda function complete it's task
     except Exception as e:
         return jsonify({'message': 'File upload failed.', 'error': str(e)}), 500
