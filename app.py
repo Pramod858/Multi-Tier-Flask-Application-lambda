@@ -1,7 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy.exc import OperationalError
 from dotenv import load_dotenv
 from datetime import datetime
 from functools import wraps
@@ -9,7 +8,6 @@ import requests
 import boto3
 import time
 import os
-
 
 load_dotenv() 
 app = Flask(__name__)
@@ -30,21 +28,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"mysql://{MYSQL_USERNAME}:{MYSQL_PASSWO
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.secret_key = 'your_secret_key'  # Change this to a random secret key
 db = SQLAlchemy(app)
-
-# Retry logic to ensure DB connection
-retries = 5
-while retries > 0:
-    try:
-        db.create_all()
-        print("Database connected and tables created successfully.")
-        break  # Exit loop when successful
-    except OperationalError:
-        retries -= 1
-        print(f"Database not ready, retrying in 5 seconds... ({5 - retries} of 5 attempts)")
-        time.sleep(5)
-else:
-    print("Failed to connect to database after multiple attempts.")
-    exit(1)
 
 # User Model
 class User(db.Model):
