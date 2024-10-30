@@ -128,7 +128,6 @@ def upload_image():
     # Upload file to S3
     try:
         s3.upload_fileobj(file, SOURCE_BUCKET, source_key)
-        print("Image uploaded successfully.")
         time.sleep(5) # The time where lambda function complete it's task
     except Exception as e:
         return jsonify({'message': 'File upload failed.', 'error': str(e)}), 500
@@ -159,7 +158,11 @@ def upload_image():
 @app.route('/check-resized', methods=['POST'])
 @login_required
 def check_resized_image():
-    resized_key = request.json['resized_key']
+    resized_key = request.json.get('resized_key')
+
+    if resized_key is None:
+        return jsonify({'error': 'resized_key not found in request'}), 400
+
     source_key = resized_key.replace("resized-", "")
 
     try:
