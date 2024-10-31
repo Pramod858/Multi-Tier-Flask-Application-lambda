@@ -15,7 +15,7 @@ on:
         description: 'ECR Repository Name'
         required: true
         type: string
-        default: flask-lambda-app
+        default: flask-lambda-app-ecr
 
 permissions:
   id-token: write   # This is required for requesting the JWT
