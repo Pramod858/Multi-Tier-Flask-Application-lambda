@@ -6,7 +6,7 @@ on:
 env:
   IMAGE_TAG: latest
   PROJECT_NAME: flask-lambda-app                # Same as environment variable in Terraform
-  ECR_REPOSITORY: flask-lambda-app         # Amazon ECR repository name
+  ECR_REPOSITORY: flask-lambda-app-ecr         # Amazon ECR repository name
   ECS_SERVICE: ecs-service                # Amazon ECS service name
   ECS_CLUSTER: ecs-cluster                # Amazon ECS cluster name
   ECS_TASK_DEFINITION: task-definition    # Name of the ECS task definition
