@@ -1,0 +1,63 @@
+name: ECR Manager
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose action: create or delete'
+        required: true
+        default: 'create'
+        type: choice
+        options:
+          - create
+          - delete
+      repository_name:
+        description: 'ECR Repository Name'
+        required: true
+        type: string
+        default: flask-lambda-app
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+
+jobs:
+  ecr:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.ROLE }}
+        role-session-name: samplerolesession
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Check if ECR repository exists
+      id: check_ecr_exists
+      run: |
+        EXISTS=$(aws ecr describe-repositories --repository-names ${{ github.event.inputs.repository_name }} || echo "RepositoryNotFoundException")
+        if [[ "$EXISTS" == *"RepositoryNotFoundException"* ]]; then
+          echo "repo_exists=false" >> $GITHUB_ENV
+        else
+          echo "repo_exists=true" >> $GITHUB_ENV
+        fi
+
+    - name: Create ECR repository
+      if: (github.event.inputs.action == 'create') && (env.repo_exists == 'false')
+      run: |
+        aws ecr create-repository --repository-name ${{ github.event.inputs.repository_name }}
+        echo "ECR repository ${{ github.event.inputs.repository_name }} created successfully."
+
+    - name: Report ECR repository already exists
+      if: (github.event.inputs.action == 'create') && (env.repo_exists == 'true')
+      run: echo "ECR repository ${{ github.event.inputs.repository_name }} already exists."
+
+    - name: Delete ECR repository
+      if: (github.event.inputs.action == 'delete') && (env.repo_exists == 'true')
+      run: |
+        aws ecr delete-repository --repository-name ${{ github.event.inputs.repository_name }} --force
+        echo "ECR repository ${{ github.event.inputs.repository_name }} deleted successfully."
+
+    - name: Report ECR repository does not exist
+      if: (github.event.inputs.action == 'delete') && (env.repo_exists == 'false')
+      run: echo "ECR repository ${{ github.event.inputs.repository_name }} does not exist."
